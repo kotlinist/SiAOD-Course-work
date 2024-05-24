@@ -11,8 +11,26 @@
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"autoprefixer": "^10.4.16",
+		"flowbite": "^2.3.0",
+		"flowbite-svelte": "^0.46.1",
+		"flowbite-svelte-blocks": "^1.1.1",
+		"flowbite-svelte-icons": "^1.6.1",
+		"mdsvex": "^0.11.0",
+		"postcss": "^8.4.33",
+		"prettier": "^3.2.5",
+		"prettier-plugin-svelte": "^3.2.3",
 		"svelte": "^4.2.7",
+		"svelte-awesome-icons": "^1.2.1",
+		"tailwindcss": "^3.4.1",
 		"vite": "^5.0.3"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"chart.js": "^4.4.3",
+		"html2pdf.js": "^0.10.1",
+		"md5": "^2.3.0",
+		"papaparse": "^5.4.1",
+		"svelte-chartjs": "^3.1.5"
+	}
 }

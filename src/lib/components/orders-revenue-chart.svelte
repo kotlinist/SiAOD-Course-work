@@ -1,0 +1,218 @@
+<script>
+    import { Chart, Card, A, Button, Dropdown, DropdownItem, Popover } from 'flowbite-svelte';
+    import { FileChartBarOutline } from 'flowbite-svelte-icons';
+
+    import { HashTable, quickSort } from "$lib/alghoritms.js";
+    import { nFormatter, calc_orders_k } from "$lib/utils.js";
+
+    export let data;
+    $: if(data) {
+    hashTable = new HashTable(data.length)
+    calculate()
+    }
+
+    let hashTable;
+    let dates = [];
+    let revenue = [];
+    let orders = [];
+    let orders_k;
+
+    function calculate() {
+    for(let i = 0; i < data.length; i++) {
+    // data.forEach((item) => {
+      let order = hashTable.get(data[i]["Дата заказа"]);
+      let orders = order?.orders || 0;
+      let revenue = order?.revenue || 0;
+      revenue += data[i]["Общая стоимость"];
+      orders += 1;
+      hashTable.updateOrInsert(data[i]["Дата заказа"], {orders, revenue})
+      // Number.parseInt(item["Общая стоимость"]);
+    }
+    let max_revenue = 0
+    dates = hashTable.getHashTableKeys(); //sort
+    let dates_obj = []
+    
+    //sort
+    dates.forEach(k => {
+        let d = k.split(".")
+        dates_obj = [...dates_obj, new Date(d[2], d[1]-1, d[0])]
+    })
+    dates = dates_obj.sort((a, b) => a - b).map(el => Intl.DateTimeFormat('ru').format(el));
+    console.log(dates)
+
+    dates.forEach(k => {
+        let order = hashTable.get(k);
+        if(order.revenue > max_revenue) max_revenue = order.revenue
+    })
+    orders_k = calc_orders_k(max_revenue)
+    
+    dates.forEach(k => {
+        let order = hashTable.get(k);
+        revenue = [...revenue, order.revenue];
+        orders = [...orders, order.orders * orders_k];
+    })
+
+    // console.log(hashTable);
+    // console.log(hashTable.getHashTableKeys());
+    // console.log(revenue);
+    // console.log(orders);
+  }
+
+
+    $: options = {
+// add data series via arrays, learn more here: https://apexcharts.com/docs/series/
+series: [
+  {
+    name: "Заказы",
+    data: orders,
+    color: "#1A56DB",
+  },
+  {
+    name: "Выручка",
+    data: revenue,
+    color: "#7E3BF2",
+  },
+],
+chart: {
+  height: "200%",
+  maxWidth: "100%",
+  type: "area",
+  fontFamily: "Inter, sans-serif",
+  dropShadow: {
+    enabled: false,
+  },
+  toolbar: {
+    show: false,
+  },
+},
+tooltip: {
+  enabled: true,
+  x: {
+    show: false,
+  },
+},
+legend: {
+  show: true
+},
+fill: {
+  type: "gradient",
+  gradient: {
+    opacityFrom: 0.55,
+    opacityTo: 0,
+    shade: "#1C64F2",
+    gradientToColors: ["#1C64F2"],
+  },
+},
+dataLabels: {
+  enabled: false,
+},
+stroke: {
+  width: 6,
+},
+grid: {
+  show: false,
+  strokeDashArray: 4,
+  padding: {
+    left: 2,
+    right: 2,
+    top: 0
+  },
+},
+xaxis: {
+  categories: dates,
+  labels: {
+    show: false,
+  },
+  axisBorder: {
+    show: false,
+  },
+  axisTicks: {
+    show: false,
+  },
+},
+yaxis: {
+  show: false,
+  labels:
+  {
+    formatter: function (value, plotInfo) {
+      if(plotInfo.seriesIndex == 0) return value / orders_k;
+        else return value.toLocaleString('en-US') + '₽';
+    }
+  }
+},
+}
+  </script>
+  
+  {#if data.length}
+  <!-- <Card size="">
+    <div class="flex justify-between items-start w-full pb-4 mb-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex-col items-center">
+            <div class="flex items-center">
+                <div class="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center me-3">
+                    <FileChartBarOutline class="w-6 h-6 text-gray-500 dark:text-gray-400" />
+                </div>
+                <div>
+                    <h5 class="leading-none text-xl font-bold text-gray-900 dark:text-white pb-1">Показатели магазина</h5>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    <!-- <div class="flex justify-between mb-5">
+      <div class="grid gap-4 grid-cols-2">
+        <div>
+          <h5 class="inline-flex items-center text-gray-500 dark:text-gray-400 leading-none font-normal mb-2">
+            Clicks
+            <InfoCircleSolid id="b1" class="w-3 h-3 text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-pointer ms-1" />
+            <Popover triggeredBy="#b1" class="text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-sm w-72 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 z-10">
+              <div class="p-3 space-y-2">
+                <h3 class="font-semibold text-gray-900 dark:text-white">Clicks growth - Incremental</h3>
+                <p>Report helps navigate cumulative growth of community activities. Ideally, the chart should have a growing trend, as stagnating chart signifies a significant decrease of community activity.</p>
+                <h3 class="font-semibold text-gray-900 dark:text-white">Calculation</h3>
+                <p>For each date bucket, the all-time volume of activities is calculated. This means that activities in period n contain all activities up to period n, plus the activities generated by your community in period.</p>
+                <A href="/"
+                  >Read more
+                  <ChevronRightOutline class="w-2 h-2 ms-1.5" /></A>
+              </div>
+            </Popover>
+          </h5>
+          <p class="text-gray-900 dark:text-white text-2xl leading-none font-bold">42,3k</p>
+        </div>
+        <div>
+          <h5 class="inline-flex items-center text-gray-500 dark:text-gray-400 leading-none font-normal mb-2">
+            CPC
+            <InfoCircleSolid id="b2" class="w-3 h-3 text-gray-400 hover:text-gray-900 dark:hover:text-white cursor-pointer ms-1" />
+            <Popover triggeredBy="#b2" class="text-sm text-gray-500 bg-white border border-gray-200 rounded-lg shadow-sm w-72 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 z-10">
+              <div class="p-3 space-y-2">
+                <h3 class="font-semibold text-gray-900 dark:text-white">CPC growth - Incremental</h3>
+                <p>Report helps navigate cumulative growth of community activities. Ideally, the chart should have a growing trend, as stagnating chart signifies a significant decrease of community activity.</p>
+                <h3 class="font-semibold text-gray-900 dark:text-white">Calculation</h3>
+                <p>For each date bucket, the all-time volume of activities is calculated. This means that activities in period n contain all activities up to period n, plus the activities generated by your community in period.</p>
+                <A href="/">Read more <ChevronRightOutline class="w-2 h-2 ms-1.5" /></A>
+              </div>
+            </Popover>
+          </h5>
+          <p class="text-gray-900 dark:text-white text-2xl leading-none font-bold">$5.40</p>
+        </div>
+      </div>
+      <div>
+        <Button color="light" class="px-3 py-2">Last week<ChevronDownOutline class="w-2.5 h-2.5 ms-1.5" /></Button>
+        <Dropdown class="w-40">
+          <DropdownItem>Yesterday</DropdownItem>
+          <DropdownItem>Today</DropdownItem>
+          <DropdownItem>Last 7 days</DropdownItem>
+          <DropdownItem>Last 30 days</DropdownItem>
+          <DropdownItem>Last 90 days</DropdownItem>
+        </Dropdown>
+      </div>
+    </div> -->
+    <Chart {options} />
+    <!-- <div class="grid grid-cols-1 items-center border-gray-200 border-t dark:border-gray-700 justify-between mt-2.5">
+      <div class="pt-5">
+        <Button href="/" class="px-4 py-2.5 text-sm font-medium text-white inline-flex items-center bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 rounded-lg text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+          <FileLinesSolid class="w-3.5 h-3.5 text-white me-2" />
+          View full report
+        </Button>
+      </div>
+    </div> -->
+  <!-- </Card> -->
+  {/if}
